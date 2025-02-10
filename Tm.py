@@ -24,7 +24,7 @@ def get_unique_id():
 # Approval Check Karne Ka Function
 def check_permission(unique_key):
     print(Fore.YELLOW + "[🔄] Checking Approval...")
-    approval_url = "https://raw.githubusercontent.com/rajput-roni/7k.py/refs/heads/main/Approval.txt"  # Corrected URL
+    approval_url = "https://raw.githubusercontent.com/rajput-roni/7k/refs/heads/main/Approval.txt"  # Corrected URL
 
     while True:
         try:
